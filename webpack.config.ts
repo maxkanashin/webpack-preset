@@ -1,58 +1,29 @@
 import path from 'path';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin'; 
-import type { Configuration as DevServerConfiguration } from 'webpack-dev-server';
 
-type Mode = 'development' | 'production';
+import {BuildMode, BuildPaths} from './webpack/types'
+import devConfigBuilder from './webpack/webpack.dev'
+import prodConfigBuilder from './webpack/webpack.prod'
 
 interface EnvVariables {
-  mode: Mode;
-  port: number;
+  mode: BuildMode;
+}
+
+const envs = {
+  development: {
+    builder: devConfigBuilder,
+  },
+  production: {
+    builder: prodConfigBuilder,
+  },
 }
 
 export default (env: EnvVariables) => {
-  const config: webpack.Configuration = {
-    mode: env.mode ?? 'development',
-    entry: path.join(__dirname, 'src', 'index.tsx'),
-    output: {
-        path: path.join(__dirname, 'build'),
-        filename: '[name].[contenthash].js',
-        clean: true,
-    },
-    plugins: [
-        new HtmlWebpackPlugin({template: path.resolve(__dirname, 'public', 'index.html')}),
-        new webpack.ProgressPlugin(),
-        new MiniCssExtractPlugin({
-          filename: 'css/[name].[contenthash:8].css',
-          chunkFilename: 'css/[name].[contenthash:8].css',
-        }),
-    ],
-    module: {
-        rules: [
-          {
-            test: /\.s[ac]ss$/i,
-            use: [
-              MiniCssExtractPlugin.loader,
-              "css-loader",
-              "sass-loader",
-            ],
-          },
-          {
-            test: /\.tsx?$/,
-            use: 'ts-loader',
-            exclude: /node_modules/,
-          },
-        ],
-      },
-      resolve: {
-        extensions: ['.tsx', '.ts', '.js'],
-      },
-      devtool: 'inline-source-map',
-      devServer: {
-        port: env.port?? 8080,
-        open: true,
-      },
-  }
+  const paths: BuildPaths = {
+    entry: path.resolve(__dirname, 'src', 'index.tsx'),
+    html: path.resolve(__dirname, 'public', 'index.html'),
+    output: path.resolve(__dirname, 'build'),
+  };
+  const config: webpack.Configuration = envs[env.mode ?? 'development'].builder({paths});
   return config;
 }
