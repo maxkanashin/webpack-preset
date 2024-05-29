@@ -1,6 +1,7 @@
 import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'; 
 import type { Configuration as DevServerConfiguration } from 'webpack-dev-server';
 
 type Mode = 'development' | 'production';
@@ -22,9 +23,21 @@ export default (env: EnvVariables) => {
     plugins: [
         new HtmlWebpackPlugin({template: path.resolve(__dirname, 'public', 'index.html')}),
         new webpack.ProgressPlugin(),
+        new MiniCssExtractPlugin({
+          filename: 'css/[name].[contenthash:8].css',
+          chunkFilename: 'css/[name].[contenthash:8].css',
+        }),
     ],
     module: {
         rules: [
+          {
+            test: /\.s[ac]ss$/i,
+            use: [
+              MiniCssExtractPlugin.loader,
+              "css-loader",
+              "sass-loader",
+            ],
+          },
           {
             test: /\.tsx?$/,
             use: 'ts-loader',
